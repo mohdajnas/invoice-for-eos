@@ -1,0 +1,2 @@
+# Force redirect Root to Admin Dashboard
+/   /admin.html   301!

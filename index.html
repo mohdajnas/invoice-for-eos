@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice - BOEHM TECH</title>
+    <link rel="icon" type="image/png" href="BT.png">
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(5px); z-index: 9999; display: flex; justify-content: center; align-items: center; flex-direction: column; transition: opacity 0.3s ease;">
+        <div class="logo-loader"
+            style="position: relative; width: 80px; height: 80px; display: flex; justify-content: center; align-items: center;">
+            <div
+                style="position: absolute; width: 100%; height: 100%; border: 4px solid #f3f3f3; border-top: 4px solid #2563eb; border-radius: 50%; animation: spin 1s linear infinite;">
+            </div>
+            <img src="BT.png" alt="Loading"
+                style="width: 40px; height: auto; animation: pulse 1.5s ease-in-out infinite;">
+        </div>
+        <div
+            style="margin-top: 20px; font-family: 'Montserrat', sans-serif; font-weight: 500; color: #1e293b; letter-spacing: 0.5px;">
+            LOADING INVOICE</div>
+    </div>
+
+    <div class="app-container">
+        <div class="mode-toggle">
+            <div id="adminControls" style="display: none; margin-right: 15px;">
+                <button id="backToAdminBtn" class="print-btn"
+                    style="background-color: white; color: #2563eb; border: 1px solid #e2e8f0; width: 40px; height: 40px; border-radius: 50%; padding: 0; display: flex; align-items: center; justify-content: center;"
+                    title="Back to Dashboard">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+            </div>
+            <button id="toggleMode" class="toggle-btn">Switch to Edit Mode</button>
+            <button id="saveBtn" class="print-btn" style="background-color: #28a745;">Save</button>
+            <button id="downloadBtn" class="print-btn" style="display: none;">Download PDF</button>
+            <button id="printBtn" class="print-btn">Print Invoice</button>
+        </div>
+    </div>
+
+
+    <div class="invoice-container" id="invoiceContainer">
+        <div class="page" id="page1">
+            <!-- Company Header -->
+            <div class="company-header">
+                <div class="company-details">
+                    <h1 class="company-name">BOEHM TECH LLP</h1>
+                    <div class="company-address">
+                        <div>Hilite Business Park</div>
+                        <div>Calicut</div>
+                        <div>673014</div>
+                        <div>7356777841</div>
+                        <div>info@boehmtech.co</div>
+                        <div>GSTIN: 32ABFFB3080M1ZI</div>
+                    </div>
+                </div>
+                <div class="logo-section">
+                    <div class="logo-placeholder">
+                        <img src="logo.png" alt="Company Logo">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Invoice Heading -->
+            <div class="invoice-heading">
+                <h2>INVOICE</h2>
+            </div>
+
+            <!-- Invoice Metadata -->
+            <div class="invoice-metadata">
+                <div class="metadata-row">
+                    <div class="metadata-item">
+                        <label class="field-label">INVOICE NUMBER:</label>
+                        <span class="field-value">
+                            <input type="text" id="invoiceNumber" value="INV002" class="edit-field" readonly>
+                            <span class="view-text">INV002</span>
+                        </span>
+                    </div>
+                    <div class="metadata-item">
+                        <label class="field-label">DATE:</label>
+                        <span class="field-value">
+                            <input type="date" id="invoiceDate" class="edit-field" readonly>
+                            <span class="view-text">-</span>
+                        </span>
+                    </div>
+                </div>
+                <div class="metadata-row">
+                    <div class="metadata-item">
+                        <label class="field-label">DUE DATE:</label>
+                        <span class="field-value">
+                            <input type="date" id="dueDate" class="edit-field" readonly>
+                            <span class="view-text">-</span>
+                        </span>
+                    </div>
+                    <div class="metadata-item">
+                        <label class="field-label">BALANCE DUE:</label>
+                        <span class="field-value balance-due">
+                            <span id="balanceDueDisplay">₹0.00</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bill To Section -->
+            <div class="bill-to-section">
+                <h3 class="section-title">BILL TO</h3>
+                <div class="client-details">
+                    <div class="field-group">
+                        <label class="field-label">CLIENT NAME:</label>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <input type="text" id="clientName" placeholder="Enter client name" class="edit-field"
+                                readonly style="flex: 1;">
+                            <select id="clientSelector" class="edit-field" style="display: none; max-width: 150px;">
+                                <option value="">Select Client...</option>
+                            </select>
+                        </div>
+                        <span class="view-text" id="clientNameView">-</span>
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">ADDRESS:</label>
+                        <textarea id="clientAddress" placeholder="Enter client address" class="edit-field" rows="3"
+                            readonly></textarea>
+                        <div class="view-text" id="clientAddressView">-</div>
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">CONTACT:</label>
+                        <input type="text" id="clientContact" placeholder="Enter contact details" class="edit-field"
+                            readonly>
+                        <span class="view-text" id="clientContactView">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Items Table -->
+            <div class="items-section">
+                <table class="items-table">
+                    <thead>
+                        <tr>
+                            <th>DESCRIPTION</th>
+                            <th>RATE</th>
+                            <th>QTY</th>
+                            <th>AMOUNT</th>
+                            <th class="edit-only">ACTION</th>
+                        </tr>
+                    </thead>
+                    <tbody id="itemsTableBody">
+                        <tr class="item-row" data-row="0">
+                            <td>
+                                <input type="text" class="item-description edit-field" placeholder="Enter description"
+                                    readonly>
+                                <span class="view-text item-description-view">-</span>
+                            </td>
+                            <td>
+                                <input type="number" class="item-rate edit-field" step="0.01" min="0" placeholder="0.00"
+                                    readonly>
+                                <span class="view-text item-rate-view">₹0.00</span>
+                            </td>
+                            <td>
+                                <input type="number" class="item-qty edit-field" min="1" value="1" readonly>
+                                <span class="view-text item-qty-view">1</span>
+                            </td>
+                            <td class="item-amount">₹0.00</td>
+                            <td class="edit-only">
+                                <button class="remove-row-btn" onclick="invoiceApp.removeRow(0)">×</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <button id="addRowBtn" class="add-row-btn edit-only">+ Add Row</button>
+            </div>
+
+            <!-- Currency Controls -->
+            <div class="currency-controls edit-only">
+                <div class="currency-group">
+                    <label class="field-label">CURRENCY:</label>
+                    <select id="currencySelect" class="edit-field currency-select">
+                        <option value="INR">₹ INR (Indian Rupee)</option>
+                        <option value="USD">$ USD (US Dollar)</option>
+                        <option value="AED">AED (UAE Dirham)</option>
+                        <option value="SAR">SAR (Saudi Riyal)</option>
+                    </select>
+                    <span class="view-text" id="currencyDisplay">₹ INR (Indian Rupee)</span>
+                </div>
+            </div>
+
+            <!-- GST Controls -->
+            <div class="gst-controls edit-only">
+                <div class="gst-checkbox-group">
+                    <input type="checkbox" id="gstEnabled" class="gst-checkbox">
+                    <label for="gstEnabled" class="gst-label">Include GST</label>
+                </div>
+                <div class="gst-percentage-group" id="gstPercentageGroup" style="display: none;">
+                    <label class="field-label">GST PERCENTAGE:</label>
+                    <input type="number" id="gstPercentage" value="18" min="0" max="100" step="0.01"
+                        class="edit-field gst-input">
+                    <span>%</span>
+                </div>
+            </div>
+
+            <!-- Advance Controls -->
+            <div class="advance-controls edit-only">
+                <div class="advance-checkbox-group">
+                    <input type="checkbox" id="advanceEnabled" class="advance-checkbox">
+                    <label for="advanceEnabled" class="advance-label">Show Advance Payment</label>
+                </div>
+                <div class="advance-percentage-group" id="advancePercentageGroup" style="display: none;">
+                    <label class="field-label">ADVANCE PERCENTAGE:</label>
+                    <input type="number" id="advancePercentage" value="50" min="0" max="100" step="0.01"
+                        class="edit-field advance-input">
+                    <span>%</span>
+                </div>
+                <div class="advance-base-group" id="advanceBaseGroup" style="display: none;">
+                    <label class="field-label">CALCULATE FROM:</label>
+                    <select id="advanceBase" class="edit-field advance-select">
+                        <option value="subtotal">Subtotal</option>
+                        <option value="total">Total Amount</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Totals Section -->
+            <div class="totals-section">
+                <div class="totals-row">
+                    <label>SUBTOTAL</label>
+                    <span id="subtotalAmount">₹0.00</span>
+                </div>
+                <div class="totals-row gst-row" id="gstAmountRow" style="display: none;">
+                    <label>GST AMOUNT:</label>
+                    <span id="gstAmount">₹0.00</span>
+                </div>
+                <div class="totals-row advance-row" id="advanceAmountRow" style="display: none;">
+                    <label>ADVANCE TO BE PAID:</label>
+                    <span id="advanceAmount">₹0.00</span>
+                </div>
+                <div class="totals-row total-row">
+                    <label>TOTAL:</label>
+                    <span id="totalAmount">₹0.00</span>
+                </div>
+                <div class="totals-row">
+                    <label>RECEIVED AMOUNT:</label>
+                    <span class="field-value">
+                        <input type="number" id="receivedAmount" step="0.01" min="0" placeholder="0.00"
+                            class="edit-field" readonly>
+                        <span class="view-text" id="receivedAmountView">₹0.00</span>
+                    </span>
+                </div>
+                <div class="totals-row balance-due-row">
+                    <label>BALANCE DUE:</label>
+                    <span id="finalBalanceDue">₹0.00</span>
+                </div>
+            </div>
+
+            <!-- Signature Section -->
+            <div class="signature-section">
+                <div class="signature-display">
+                    <div class="signature-label">SEAL</div>
+                    <div class="signature-area" id="signatureArea">
+                        <img id="signatureImage" src="seal.png" alt="Company Seal">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+
+</html>
